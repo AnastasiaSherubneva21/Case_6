@@ -1,22 +1,22 @@
 from tkinter import *
 import time
 
-
 class Cell:
-    def __init__(self, black_points, x=10, y=10, i=10, j=10):
+    def __init__(self, black_points, s, x=10, y=10, i=10, j=10, time=0):
         self.isAlive = False
         self.nextStatus = None
         self.pos_screen = (x, y)
         self.pos_matrix = (i, j)
         self.black_points = black_points
         self.open()
+        self.time = time
+        self.s = s
+
 
     def redraw(self, event):
         jj = int((event.x - 10) / self.pos_matrix[0])  # где 10 - это размер клетки
         ii = int((event.y - 10) / self.pos_matrix[1])
-
         pos = (ii, jj)
-
         if pos in self.black_points:
             self.canvas.itemconfig(self.grid[pos][0], fill='white')
             self.black_points.remove(pos)
@@ -24,10 +24,11 @@ class Cell:
             self.canvas.itemconfig(self.grid[pos][0], fill='black')
             self.black_points.append(pos)
 
+
     def dictionary_play(self):
         d = {}
-        for i in range(0, 40):
-            for j in range(0, 40):
+        for i in range(self.s):
+            for j in range(self.s):
                 pos = (i, j)
                 set_pos = {(i - 1, j), (i + 1, j), (i, j - 1), (i, j + 1), (i - 1, j - 1), (i - 1, j + 1),
                            (i + 1, j - 1), (i + 1, j + 1)}
@@ -43,6 +44,7 @@ class Cell:
                         d[pos] = 0
         return d
 
+
     def print_dict(self, d):
         self.black_points = []
         for i in d:
@@ -53,19 +55,23 @@ class Cell:
                 self.canvas.itemconfig(self.grid[i][0], fill='white')
 
 
-
     def play(self, event):
+        return_s_t = 1
+        self.time = 1
         set_list = set()
         len_last = -1
         len_now = -2
-        while len(self.black_points) != 0 and len_last != len_now:
+        while len(self.black_points) != 0 and len_last != len_now and return_s_t == 1:
             d = self.dictionary_play()
             self.print_dict(d)
             len_last = len(set_list)
             bp_tuple = tuple(self.black_points)
             set_list.add(bp_tuple)
             len_now = len(set_list)
+            self.root.update()
             time.sleep(1)
+            return_s_t = self.return_self_time()
+
         lst_gameover = [(15, 9), (15, 10), (15, 11), (15, 12), (15, 13), (15, 15), (15, 16), (15, 17), (15, 18),
                         (15, 19), (15, 21), (15, 25), (15, 27), (15, 28), (15, 29), (15, 30), (15, 31), (16, 9),
                         (16, 13), (16, 15), (16, 19), (16, 21), (16, 22), (16, 24), (16, 25), (16, 27), (17, 9),
@@ -80,15 +86,25 @@ class Cell:
                         (23, 31), (24, 9), (24, 13), (24, 16), (24, 18), (24, 21), (24, 27), (24, 28), (25, 9),
                         (25, 10), (25, 11), (25, 12), (25, 13), (25, 17), (25, 21), (25, 22), (25, 23), (25, 24),
                         (25, 25), (25, 27), (25, 29), (25, 30), (25, 31)]
-        for i in self.black_points:
+        if return_s_t != 2:
+            for i in self.black_points:
+                try:
+                    self.canvas.itemconfig(self.grid[i][0], fill='white')
+                except:
+                    pass
             try:
-                self.canvas.itemconfig(self.grid[i][0], fill='white')
+                for i in lst_gameover:
+                    self.canvas.itemconfig(self.grid[i][0], fill='black')
             except:
                 pass
-        for i in lst_gameover:
-            self.canvas.itemconfig(self.grid[i][0], fill='black')
 
 
+    def stop(self, event):
+        self.time = 2
+
+
+    def return_self_time(self):
+        return self.time
 
     def open(self):
         self.root = Tk()
@@ -104,37 +120,40 @@ class Cell:
         self.canvas = Canvas(self.frame, width=400, height=400)  # создаёт холст на котором можно рисовать
         self.canvas.pack()
         self.canvas.bind('<Button-1>', self.redraw)
-        self.canvas.bind('<ButtonPress-3>', self.redraw)
+        self.butstop = Button(self.root, bg='gray', text='Stop', font='arial 15')
+        self.butstop.pack()
+        self.butstop.bind('<ButtonPress-1>', self.stop)
 
 
     def __str__(self):
         return str(self.isAlive)
 
+
     def __repr__(self):
         return str(self.isAlive)
+
 
     def switchStatus(self):
         self.isAlive = not self.isAlive
 
-    def create_grid(self):
+
+    def create_grid(self, s):
         """This function creates the board on which the game will take place"""
         x = 10
         y = 10
 
-        for i in range(50):
-            for j in range(50):
+        for i in range(s):
+            for j in range(s):
                 pos = (i, j)
                 rect = self.canvas.create_rectangle(x, y, x+10, y+10, fill="white")
-                # state=HIDDEN, tags=('hid','0'))
-
                 self.grid[pos] = [rect, False]
-
                 x += 10
             x = 10
             y += 10
 
 
+s = int(input('Введите размер игровой доски: '))
 black_points = []
-p = Cell(black_points)
-p.create_grid()
+p = Cell(black_points, s)
+p.create_grid(s)
 p.root.mainloop()
